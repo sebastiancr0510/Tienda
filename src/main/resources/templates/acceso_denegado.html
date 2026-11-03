@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+    <head th:replace="~{general/fragmentos :: head}"></head>
+    <body>
+        <header th:replace="~{general/fragmentos :: header}"></header>
+        <main class="container py-5 text-center">
+            <h2>[[#{seguridad.accesoDenegado}]]</h2>
+            <p>[[#{seguridad.sinPermiso}]]</p>
+            <a class="btn btn-primary" th:href="@{/}">[[#{accion.regresar}]]</a>
+        </main>
+        <footer th:replace="~{general/fragmentos :: footer}"></footer>
+    </body>
+</html>
