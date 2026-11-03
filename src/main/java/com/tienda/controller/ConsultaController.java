@@ -58,4 +58,15 @@ public class ConsultaController {
         model.addAttribute("precioSup", precioSup);
         return "consultas/listado";
     }
+
+    @GetMapping("/inventario")
+    public String inventario(@RequestParam(defaultValue = "5") int maximo, Model model) {
+        model.addAttribute("maximo", maximo);
+        if (maximo < 0) {
+            model.addAttribute("errorLimite", true);
+        } else {
+            model.addAttribute("productos", productoService.getProductosConInventarioBajo(maximo));
+        }
+        return "consultas/inventario";
+    }
 }

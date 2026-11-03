@@ -163,4 +163,21 @@ class TiendaApplicationTests {
                 .param("password", "incorrecta"))
                 .andExpect(redirectedUrl("/login?error=true"));
     }
+    @Test
+    void inventarioIncluyeElLimiteYOrdenaSoloProductosActivos() throws Exception {
+        Categoria categoria = crearCategoria();
+        Producto limite = crearProducto(categoria, "En el límite", "15.00");
+        Producto agotado = crearProducto(categoria, "Agotado", "10.00");
+        agotado.setExistencias(0);
+        Producto abundante = crearProducto(categoria, "Fuera del límite", "20.00");
+        abundante.setExistencias(6);
+        Producto inactivo = crearProducto(categoria, "Inactivo", "12.00");
+        inactivo.setActivo(false);
+        assertThat(productoService.getProductosConInventarioBajo(5))
+                .extracting(Producto::getIdProducto)
+                .containsExactly(agotado.getIdProducto(), limite.getIdProducto());
+        mvc.perform(get("/consultas/inventario").param("maximo", "0"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Agotado")));
+    }
 }

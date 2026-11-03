@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{general/fragmentos :: head}"></head>
+<body>
+<header th:replace="~{general/fragmentos :: header}"></header>
+<main class="container py-4">
+    <a th:href="@{/consultas/listado}">Volver a consultas</a>
+    <div class="mt-4 mb-3">
+        <div class="text-success fw-bold">PRÁCTICA #2</div>
+        <h1>Productos con inventario bajo</h1>
+        <p>Buscá productos activos por cantidad disponible. Los de menor existencia aparecen primero.</p>
+    </div>
+    <form method="get" th:action="@{/consultas/inventario}" class="bg-light border rounded p-3 mb-4">
+        <label class="form-label" for="maximo">Existencias máximas (unidades)</label>
+        <div class="d-flex gap-2">
+            <input class="form-control w-auto" id="maximo" name="maximo" type="number" min="0"
+                   max="2147483647" required th:value="${maximo}"/>
+            <button class="btn btn-success" type="submit">Consultar</button>
+        </div>
+    </form>
+    <p th:if="${errorLimite}" class="alert alert-warning">Ingresá un número igual o mayor que cero.</p>
+    <section th:unless="${errorLimite}">
+        <h2 class="h4">Resultados <span class="badge bg-secondary" th:text="${productos.size()}"></span></h2>
+        <p th:if="${productos.empty}">No hay productos activos dentro de ese límite.</p>
+        <table th:unless="${productos.empty}" class="table table-striped align-middle">
+            <thead><tr><th>Producto</th><th>Categoría</th><th>Precio</th><th class="text-end">Existencias</th></tr></thead>
+            <tbody><tr th:each="p : ${productos}">
+                <td th:text="${p.descripcion}"></td>
+                <td th:text="${p.categoria != null ? p.categoria.descripcion : 'Sin categoría'}"></td>
+                <td th:text="${#numbers.formatDecimal(p.precio, 1, 2)}"></td>
+                <td class="text-end" th:text="${p.existencias}"></td>
+            </tr></tbody>
+        </table>
+    </section>
+</main>
+<footer th:replace="~{general/fragmentos :: footer}"></footer>
+</body></html>

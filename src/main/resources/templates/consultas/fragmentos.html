@@ -59,7 +59,11 @@
             <div th:replace="~{consultas/fragmentos :: formConsulta('primary',#{consultas.derivadas},'/consultas/consultaDerivada')}"/>
             <div th:replace="~{consultas/fragmentos :: formConsulta('warning',#{consultas.jpql},'/consultas/consultaJPQL')}"/>
             <div th:replace="~{consultas/fragmentos :: formConsulta('success',#{consultas.sql},'/consultas/consultaSQL')}"/>
-            <div class='card'><p>Acá va su Práctica #2</p></div>
+            <div class="card p-2">
+                <div class="card-header text-white bg-secondary"><h5>Práctica #2</h5></div>
+                <div class="card-body"><p>Consultar productos activos con inventario bajo.</p></div>
+                <div class="card-footer"><a class="btn btn-secondary" th:href="@{/consultas/inventario}">Consultar inventario</a></div>
+            </div>
         </section>
 
         <div th:fragment='formConsulta(colorForm, textoForm, urlForm)'>

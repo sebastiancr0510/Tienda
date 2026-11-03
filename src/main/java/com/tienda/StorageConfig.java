@@ -2,6 +2,7 @@ package com.tienda;
 
 import com.google.auth.oauth2.GoogleCredentials;
 import com.google.cloud.storage.Storage;
+import org.springframework.context.annotation.Lazy;
 import com.google.cloud.storage.StorageOptions;
 import java.io.IOException;
 import java.io.InputStream;
@@ -20,6 +21,7 @@ public class StorageConfig {
     private String jsonFile;
 
     @Bean
+    @Lazy
     public Storage storage() throws IOException {
         ClassPathResource resource = new ClassPathResource(jsonPath + "/" + jsonFile);
         try (InputStream inputStream = resource.getInputStream()) {
