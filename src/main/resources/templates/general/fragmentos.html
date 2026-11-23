@@ -4,6 +4,8 @@
     <title>TechShop</title>
 
     <meta charset="UTF-8"/>
+    <meta name="_csrf" th:content="${_csrf.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf.headerName}"/>
 
     <link rel="icon" type="image/png" sizes="16x16" href="/fav/favicon-16x16.png"/>
     <link rel="icon" type="image/png" sizes="32x32" href="/fav/favicon-32x32.png"/>
@@ -37,18 +39,6 @@
                                     [[#{plantilla.admin}]]</a>
                                 <ul class="dropdown-menu">
                                     <li><a class="dropdown-item" th:href="@{/usuario/listado}">[[#{plantilla.usuarios}]]</a></li>                                    
-                                    <li class="submenu submenu-md dropend">
-                                        <a class="dropdown-item dropdown-toggle" role="button" data-bs-toggle="dropdown" aria-expanded="false"
-                                           onclick="event.stopPropagation();">
-                                            [[#{plantilla.seguridad}]]
-                                        </a>
-                                        <ul class="dropdown-menu">                                            
-                                            <li><a class="dropdown-item" th:href="@{/role/listado}">[[#{plantilla.troles}]]</a></li>
-                                            <li><a class="dropdown-item" th:href="@{/usuario_rol/mantenimiento}">[[#{plantilla.permisos}]]</a></li>
-                                            <li><a class="dropdown-item" th:href="@{/ruta/listado}">[[#{plantilla.rutas}]]</a></li>
-                                        </ul>
-                                    </li>
-                                    <li><a class="dropdown-item" th:href="@{/constante/listado}">[[#{plantilla.constantes}]]</a></li>
                                 </ul>
                             </li>
                         </ul>
@@ -65,6 +55,8 @@
                             </li>
                         </ul>
         <ul class="navbar-nav" sec:authorize="!isAuthenticated()">
+                            <li class="nav-item"><a class="nav-link" th:href="@{/registro/nuevo}">Registrarse</a></li>
+                            <li class="nav-item"><a class="nav-link" th:href="@{/registro/recordar}">Recuperar contraseña</a></li>
                             <li class="nav-item">
                                 <a class="nav-link" th:href="@{/login}">
                                     <i class="fas fa-sign-in-alt"></i>

@@ -48,6 +48,23 @@ class TiendaApplicationTests {
     @Autowired
     ProductoService productoService;
 
+    @Autowired com.tienda.repository.UsuarioRepository usuarios;
+    @Autowired com.tienda.repository.RolRepository roles;
+    @Autowired org.springframework.security.crypto.password.PasswordEncoder encoder;
+    @MockitoBean org.springframework.mail.javamail.JavaMailSender mailSender;
+
+    @org.junit.jupiter.api.BeforeEach
+    void usuariosDePrueba() {
+        String[][] datos = {{"juan", "123", "ADMIN"}, {"rebeca", "456", "VENDEDOR"}, {"pedro", "789", "USUARIO"}};
+        for (String[] dato : datos) {
+            var rol = new com.tienda.domain.Rol(); rol.setRol(dato[2]); roles.save(rol);
+            var usuario = new com.tienda.domain.Usuario();
+            usuario.setUsername(dato[0]); usuario.setPassword(encoder.encode(dato[1]));
+            usuario.setCorreo(dato[0] + "@example.com"); usuario.setActivo(true);
+            usuario.getRoles().add(rol); usuarios.save(usuario);
+        }
+    }
+
     private Categoria crearCategoria() {
         Categoria categoria = new Categoria();
         categoria.setDescripcion("Prueba");
@@ -88,7 +105,7 @@ class TiendaApplicationTests {
         Categoria categoria = crearCategoria();
         crearProducto(categoria, "Producto de prueba", "10.25");
         for (String ruta : List.of("/", "/categoria/listado", "/producto/listado",
-                "/consultas/listado", "/categoria/modificar/" + categoria.getIdCategoria(),
+                "/consultas/listado", "/usuario/listado", "/categoria/modificar/" + categoria.getIdCategoria(),
                 "/consultas/" + categoria.getIdCategoria())) {
             mvc.perform(get(ruta)).andExpect(status().isOk());
         }
@@ -118,7 +135,7 @@ class TiendaApplicationTests {
     @Test
     @WithAnonymousUser
     void paginasPublicasYLoginSonAccesibles() throws Exception {
-        for (String ruta : List.of("/", "/consultas/listado", "/login", "/acceso_denegado")) {
+        for (String ruta : List.of("/", "/consultas/listado", "/login", "/acceso_denegado", "/registro/nuevo", "/registro/recordar")) {
             mvc.perform(get(ruta)).andExpect(status().isOk());
         }
         mvc.perform(get("/producto/listado"))
@@ -162,6 +179,84 @@ class TiendaApplicationTests {
         mvc.perform(post("/login").with(csrf()).param("username", "juan")
                 .param("password", "incorrecta"))
                 .andExpect(redirectedUrl("/login?error=true"));
+    }
+
+    @Autowired com.tienda.service.UsuarioService usuarioService;
+
+    @Test
+    void editarSinClaveConservaHashYRoles() {
+        var existente = usuarios.findByUsername("juan").orElseThrow();
+        String hash = existente.getPassword();
+        var editado = new com.tienda.domain.Usuario();
+        editado.setIdUsuario(existente.getIdUsuario());
+        editado.setUsername("juan"); editado.setCorreo("juan@example.com");
+        editado.setPassword(""); editado.setActivo(true);
+        usuarioService.save(editado, null, true);
+        var guardado = usuarios.findByUsername("juan").orElseThrow();
+        assertThat(guardado.getPassword()).isEqualTo(hash);
+        assertThat(encoder.matches("123", guardado.getPassword())).isTrue();
+        assertThat(guardado.getRoles()).extracting(com.tienda.domain.Rol::getRol).contains("ADMIN");
+    }
+
+    @Test
+    void registroActivaSoloConTokenYNoPermiteReutilizarlo() throws Exception {
+        var mensaje = new jakarta.mail.internet.MimeMessage((jakarta.mail.Session) null);
+        org.mockito.Mockito.when(mailSender.createMimeMessage()).thenReturn(mensaje);
+        mvc.perform(post("/registro/crearUsuario").with(csrf())
+                .param("username", "nueva").param("correo", "nueva@example.com")
+                .param("nombre", "Nueva").param("apellidos", "Prueba"))
+                .andExpect(status().isOk());
+        var nuevo = usuarios.findByUsername("nueva").orElseThrow();
+        assertThat(nuevo.isActivo()).isFalse();
+        String token = nuevo.getPassword();
+        org.mockito.Mockito.verify(mailSender).send(org.mockito.ArgumentMatchers.any(jakarta.mail.internet.MimeMessage.class));
+        mvc.perform(get("/registro/activacion/nueva/" + token)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("name=\"clave\"")));
+        mvc.perform(post("/registro/activar").with(csrf())
+                .param("idUsuario", nuevo.getIdUsuario().toString())
+                .param("clave", "incorrecta").param("password", "Nueva123"))
+                .andExpect(status().isOk());
+        assertThat(nuevo.isActivo()).isFalse();
+        mvc.perform(post("/registro/activar").with(csrf())
+                .param("idUsuario", nuevo.getIdUsuario().toString())
+                .param("clave", token).param("password", "Nueva123")
+                .param("nombre", "Nueva").param("apellidos", "Prueba"))
+                .andExpect(redirectedUrl("/"));
+        assertThat(nuevo.isActivo()).isTrue();
+        assertThat(encoder.matches("Nueva123", nuevo.getPassword())).isTrue();
+        mvc.perform(get("/registro/activacion/nueva/" + token))
+                .andExpect(view().name("/registro/salida"));
+        mvc.perform(post("/registro/crearUsuario").param("username", "sinCsrf"))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    @WithMockUser(roles = "ADMIN")
+    void formularioEdicionUsuarioSeRenderiza() throws Exception {
+        var usuario = usuarios.findByUsername("juan").orElseThrow();
+        mvc.perform(get("/usuario/modificar/" + usuario.getIdUsuario()))
+                .andExpect(status().isOk());
+    }
+
+    @Test
+    void recuperarCuentaExigeUsuarioYCorreoYEnviaEnlace() throws Exception {
+        var existente = usuarios.findByUsername("juan").orElseThrow();
+        String hash = existente.getPassword();
+        mvc.perform(post("/registro/recordarUsuario").with(csrf())
+                .param("username", "juan").param("correo", "otro@example.com"))
+                .andExpect(status().isOk());
+        assertThat(existente.getPassword()).isEqualTo(hash);
+        org.mockito.Mockito.verifyNoInteractions(mailSender);
+        org.mockito.Mockito.when(mailSender.createMimeMessage())
+                .thenReturn(new jakarta.mail.internet.MimeMessage((jakarta.mail.Session) null));
+        mvc.perform(post("/registro/recordarUsuario").with(csrf())
+                .param("username", "juan").param("correo", "juan@example.com"))
+                .andExpect(status().isOk());
+        assertThat(existente.isActivo()).isFalse();
+        assertThat(existente.getPassword()).isNotEqualTo(hash);
+        org.mockito.Mockito.verify(mailSender).send(org.mockito.ArgumentMatchers.any(jakarta.mail.internet.MimeMessage.class));
+        mvc.perform(get("/registro/activacion/juan/" + existente.getPassword()))
+                .andExpect(status().isOk());
     }
     @Test
     void inventarioIncluyeElLimiteYOrdenaSoloProductosActivos() throws Exception {

@@ -3,7 +3,6 @@ package com.tienda.service;
 import com.google.cloud.storage.BlobId;
 import com.google.cloud.storage.BlobInfo;
 import com.google.cloud.storage.Storage;
-import org.springframework.context.annotation.Lazy;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -22,7 +21,7 @@ public class FirebaseStorageService {
     // Aquí se manejaría la inyección del cliente de Storage como un bean
     private final Storage storage;
 
-    public FirebaseStorageService(@Lazy Storage storage) {
+    public FirebaseStorageService(@org.springframework.context.annotation.Lazy Storage storage) {
         this.storage = storage;
     }
 

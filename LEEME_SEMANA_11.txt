@@ -1,0 +1,36 @@
+TIENDA - RECURSOS DE SEMANA 11
+
+Abrir esta carpeta como proyecto Maven en NetBeans con JDK 21.
+Ejecutar Clean and Build y luego Run. Dirección: http://localhost:8081
+
+Cambios:
+- Registro, activación por correo, recuperación de contraseña y mantenimiento de usuarios.
+- Dependencia spring-boot-starter-mail en pom.xml.
+- Una sola configuración de seguridad en SecurityConfig.java. ProjectConfig conserva vistas e idiomas.
+- Vistas en src/main/resources/templates/usuario y templates/registro.
+- Etiquetas CSRF dentro del head de templates/general/fragmentos.html.
+- Permisos base de administración protegidos y rutas adicionales desde la tabla ruta.
+- Corrección de contraseña al editar, conservación de roles y validación del token de activación.
+- Pruebas con usuarios en H2 y correo simulado; no se envían mensajes reales durante las pruebas.
+
+Configuración local:
+Se conserva la conexión MySQL del proyecto y el Firebase entregado. Las credenciales
+MySQL y Gmail están en src/main/resources/tienda-local.properties, excluido por .gitignore.
+Firebase sigue disponible para subir imágenes y se carga al utilizarlo.
+La base techshop debe existir con las tablas de las semanas anteriores: categoria,
+producto, usuario, rol, usuario_rol y ruta. Este ZIP no contiene tu base de datos local.
+Los usuarios de inicio de sesión son los almacenados en MySQL. Los usuarios juan,
+rebeca y pedro creados por las pruebas solo existen en H2 durante las pruebas.
+
+Correo:
+Se incluyó la cuenta facilitada para la práctica. No se comprobó su acceso SMTP real.
+Si Gmail rechaza el envío, revisar la cuenta y su contraseña de aplicación en tienda-local.properties.
+servidor.http=http://localhost:8081 es la URL base de los enlaces; para abrirlos desde
+otro equipo debe cambiarse por una URL accesible desde ese equipo.
+La recuperación requiere el nombre de usuario y correo de la misma cuenta. Al enviar
+el enlace, la cuenta queda pendiente hasta completar la activación con una nueva contraseña.
+Los enlaces son de un solo uso; esta adaptación de clase no añade vencimiento temporal.
+
+El ZIP incluye la conexión Git en la rama semana-11 y excluye target. Incluye configuración local privada para tu uso:
+no lo publiques como archivo ZIP en un repositorio público.
+
