@@ -44,6 +44,8 @@ public static final String[] PUBLIC_URLS = {
         var rutas = rutaService.getRutas();
 
         http.authorizeHttpRequests(requests -> {
+            requests.requestMatchers("/carrito/verFactura").authenticated();
+            requests.requestMatchers("/carrito/**").permitAll();
             requests.requestMatchers("/", "/index", "/login", "/error", "/acceso_denegado",
                     "/registro/**", "/consultas/**", "/fav/**", "/js/**", "/css/**",
                     "/img/**", "/audios/**", "/videos/**", "/webjars/**").permitAll();

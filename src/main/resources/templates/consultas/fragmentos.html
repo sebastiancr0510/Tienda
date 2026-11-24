@@ -43,6 +43,10 @@
                             <p class="card-text text-muted mb-auto text-truncate" th:text="${p.detalle}">Detalle</p>
                         </div>
                         <div class="card-footer bg-white d-flex justify-content-between align-items-center">
+                            <form th:if="${p.activo and p.existencias > 0}" th:action="@{/carrito/agregar}" method="post" onsubmit="addCart(this); return false;">
+                                <input type="hidden" name="idProducto" th:value="${p.idProducto}"/>
+                                <button class="btn btn-primary btn-sm">Agregar al carrito</button>
+                            </form>
                             <div class="fw-bold">
                                 <span class="text-success h5" th:text="${#numbers.formatCurrency(p.precio)}">$99.99</span>
                                 <span th:if="${p.existencias > 0}" class="badge text-bg-success ms-2" th:text="${p.existencias} + ' unidades'"></span>

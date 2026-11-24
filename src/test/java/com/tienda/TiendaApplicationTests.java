@@ -275,4 +275,27 @@ class TiendaApplicationTests {
                 .andExpect(status().isOk())
                 .andExpect(content().string(org.hamcrest.Matchers.containsString("Agotado")));
     }
+
+    @Autowired jakarta.persistence.EntityManager entidades;
+
+    @Test
+    @WithMockUser(username = "pedro", roles = "USUARIO")
+    void compraGeneraFacturaConDetalleYDescuentaInventario() throws Exception {
+        var producto = crearProducto(crearCategoria(), "Producto de compra", "12.50");
+        String id = producto.getIdProducto().toString();
+        var sesion = new MockHttpSession();
+        mvc.perform(post("/carrito/agregar").session(sesion).with(csrf()).param("idProducto", id))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString("/carrito/listado")));
+        mvc.perform(get("/carrito/modificar/" + id).session(sesion)).andExpect(status().isOk());
+        mvc.perform(post("/carrito/actualizar").session(sesion).with(csrf())
+                .param("producto.idProducto", id).param("cantidad", "2")).andExpect(redirectedUrl("/carrito/listado"));
+        mvc.perform(get("/carrito/listado").session(sesion)).andExpect(content().string(org.hamcrest.Matchers.containsString("Producto de compra")));
+        mvc.perform(post("/facturar/carrito").session(sesion).with(csrf())).andExpect(redirectedUrl("/carrito/verFactura"));
+        entidades.flush();
+        entidades.clear();
+        mvc.perform(get("/carrito/verFactura").session(sesion)).andExpect(status().isOk())
+                .andExpect(content().string(org.hamcrest.Matchers.containsString("Producto de compra")));
+        assertThat(productos.findById(Integer.valueOf(id)).orElseThrow().getExistencias()).isEqualTo(3);
+        assertThat((java.util.List<?>) sesion.getAttribute("carrito")).isEmpty();
+    }
 }
