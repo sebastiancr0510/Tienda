@@ -71,11 +71,6 @@ public class UsuarioService {
     public void save(Usuario usuario, MultipartFile imagenFile, boolean encriptaClave) {
         // Verificar si el correo ya existe, excluyendo el usuario actual        
         final Integer idUser = usuario.getIdUsuario();
-        usuarioRepository.findByUsername(usuario.getUsername()).ifPresent(existente -> {
-            if (!java.util.Objects.equals(existente.getIdUsuario(), idUser)) {
-                throw new IllegalArgumentException("El nombre de usuario ya está en uso.");
-            }
-        });        
         Optional<Usuario> usuarioDuplicado = usuarioRepository.findByUsernameOrCorreo(null, usuario.getCorreo());
         if (usuarioDuplicado.isPresent()) {
             Usuario encontrado = usuarioDuplicado.get();
@@ -85,7 +80,7 @@ public class UsuarioService {
                 throw new DataIntegrityViolationException("El correo ya está en uso por otro usuario.");
             }
         }
-        
+
         //Se valida si la clave se va actualizar o si es un usuario nuevo se debe actualizar...
         var asignarRol = false;
         if (usuario.getIdUsuario() == null) {
@@ -93,28 +88,26 @@ public class UsuarioService {
                 throw new IllegalArgumentException("La contraseña es obligatoria para nuevos usuarios.");
             }
             //La primera vez como es activación no se encripta...
-            usuario.setPassword(encriptaClave?passwordEncoder.encode(usuario.getPassword()):usuario.getPassword());
+            usuario.setPassword(encriptaClave ? passwordEncoder.encode(usuario.getPassword()) : usuario.getPassword());
             asignarRol = true;
-        } else {
-            if (usuario.getPassword() == null || usuario.getPassword().isBlank()) {
-                // El campo de password en el formulario viene vacío (no se desea actualizar).
-                // Recuperamos la contraseña HASHED existente de la base de datos.
-                Usuario usuarioExistente = usuarioRepository.findById(usuario.getIdUsuario())
-                        .orElseThrow(() -> new IllegalArgumentException("Usuario a modificar no encontrado."));
+       } else {
+    Usuario usuarioExistente = usuarioRepository
+            .findById(usuario.getIdUsuario())
+            .orElseThrow(() -> new IllegalArgumentException(
+                    "Usuario a modificar no encontrado."));
 
-                // Asignamos la contraseña existente al objeto "usuario" antes de guardarlo.                
-                usuario.setPassword(usuarioExistente.getPassword());
-            } else {
-                // El campo de password NO está vacío (se desea actualizar).
-                // Se encripta y se guarda la nueva contraseña.
-                usuario.setPassword(encriptaClave?passwordEncoder.encode(usuario.getPassword()):usuario.getPassword());                
-            }
-        }
-        if (idUser != null) {
-            Usuario existente = usuarioRepository.findById(idUser).orElseThrow();
-            usuario.setRoles(new java.util.HashSet<>(existente.getRoles()));
-            usuario.setRutaImagen(existente.getRutaImagen());
-        }
+    usuario.setRoles(new java.util.HashSet<>(
+            usuarioExistente.getRoles()));
+
+    if (usuario.getPassword() == null
+            || usuario.getPassword().isBlank()) {
+        usuario.setPassword(usuarioExistente.getPassword());
+    } else {
+        usuario.setPassword(encriptaClave
+                ? passwordEncoder.encode(usuario.getPassword())
+                : usuario.getPassword());
+    }
+}
         usuario = usuarioRepository.save(usuario);
         if (imagenFile != null && !imagenFile.isEmpty()) { //Si no está vacío... pasaron una imagen...            
             try {
@@ -127,14 +120,7 @@ public class UsuarioService {
         }
         if (asignarRol) {
             //Si se está creando el usuario, se crea el rol por defecto "USER"
-            Rol rol = rolRepository.findByRol("USER")
-                    .or(() -> rolRepository.findByRol("USUARIO"))
-                    .orElseGet(() -> {
-                        Rol nuevo = new Rol(); nuevo.setRol("USUARIO");
-                        return rolRepository.save(nuevo);
-                    });
-            usuario.getRoles().add(rol);
-            usuarioRepository.save(usuario);
+            asignarRolPorUsername(usuario.getUsername(), "USUARIO");
         }
     }
 
@@ -168,6 +154,31 @@ public class UsuarioService {
         }
         Rol rol = rolOpt.get();
         usuario.getRoles().add(rol);
+        return usuarioRepository.save(usuario);
+    }
+
+    //Sección para gestionar roles a usuarios...
+    
+    @Transactional(readOnly = true)
+    public List<String> getRolesNombres() {
+        // Retorna una lista de Strings con el nombre de cada rol
+        return rolRepository.findAll().stream()
+                .map(Rol::getRol)
+                .toList();
+    }
+
+    @Transactional
+    public Usuario eliminarRol(String username, Integer idRol) {
+        Optional<Usuario> usuarioOpt = usuarioRepository.findByUsername(username);
+        if (usuarioOpt.isEmpty()) {
+            throw new RuntimeException("Usuario no encontrado: " + username);
+        }
+        Usuario usuario = usuarioOpt.get();
+
+        // Filtra la colección de roles del usuario para mantener solo los que NO coinciden con idRol
+        usuario.getRoles().removeIf(rol -> rol.getIdRol().equals(idRol));
+
+        // Guarda el usuario con la colección de roles modificada
         return usuarioRepository.save(usuario);
     }
 }

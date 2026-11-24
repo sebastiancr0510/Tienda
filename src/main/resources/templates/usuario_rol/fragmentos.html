@@ -1,0 +1,123 @@
+<section th:fragment="asignar">
+    <div class="card mb-4 shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="fas fa-search"></i> [[#{accion.buscar_usuario}]]</h5>
+        </div>
+        <div class="card-body">
+            <form method="GET"
+                  th:action="@{/usuario_rol/buscar}" 
+                  th:object="${usuario}"
+                  class="row g-3 align-items-end">
+                <div class="col-md-4">
+                    <label for="usernameInput" class="form-label">[[#{usuario.username}]]</label>
+                    <input type="text" 
+                           id="usernameInput"
+                           name="username" 
+                           th:field="*{username}"
+                           class="form-control"
+                           required/>
+                </div>
+                <div class="col-md-auto">
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-search"></i> [[#{accion.buscar}]]
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="row" th:if="${usuario != null and usuario.idUsuario != null}">
+        
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0"><i class="fas fa-user-circle"></i> [[#{plantilla.tusuario}]]</h5>
+                </div>
+                <div class="card-body text-center">
+                    <img th:src="@{${usuario.rutaImagen}}" 
+                         alt="Imagen de Usuario" 
+                         class="img-fluid rounded-circle mb-3"
+                         style="width: 150px; height: 150px; object-fit: cover;"/>
+                    
+                    <ul class="list-group list-group-flush text-start">
+                        <li class="list-group-item">
+                            <strong>[[#{usuario.username}]]:</strong> [[${usuario.username}]]
+                        </li>
+                        <li class="list-group-item">
+                            <strong>[[#{usuario.nombre}]]:</strong> [[${usuario.nombre}]] [[${usuario.apellidos}]]
+                        </li>
+                        <li class="list-group-item">
+                            <strong>[[#{usuario.correo}]]:</strong> [[${usuario.correo}]]
+                        </li>
+                        <li class="list-group-item">
+                            <strong>[[#{usuario.telefono}]]:</strong> [[${usuario.telefono} ?: '-']]
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h5 class="mb-0"><i class="fas fa-check-circle"></i> [[#{role.usuario}]]</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(rolesAsignados)}" class="p-3 text-center text-muted">
+                        [[#{role.no_asignados}]]
+                    </div>
+                    <table th:unless="${#lists.isEmpty(rolesAsignados)}" class="table table-striped mb-0">
+                        <tbody>
+                            <tr th:each="rol : ${rolesAsignados}">
+                                <td>[[${rol.rol}]]</td> <td sec:authorize="hasRole('ROLE_ADMIN')" class="text-end">
+                                    <form method="get" th:action="@{/usuario_rol/eliminar}">
+                                        <input type="hidden" name="idRol" th:value="${rol.idRol}"/>
+                                        <input type="hidden" name="username" th:value="${usuario.username}"/>
+                                        <button class="btn btn-sm btn-danger" type="submit"
+                                                title="[[#{accion.eliminar_rol}]]">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </form> 
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-header bg-success text-white">
+                    <h5 class="mb-0"><i class="fas fa-plus-square"></i> [[#{role.total}]]</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div th:if="${#lists.isEmpty(rolesDisponibles)}" class="p-3 text-center text-muted">
+                        [[#{role.todos_asignados}]]
+                    </div>
+                    <table th:unless="${#lists.isEmpty(rolesDisponibles)}" class="table table-striped mb-0">
+                        <tbody>
+                            <tr th:each="rol : ${rolesDisponibles}">
+                                <td>[[${rol}]]</td> <td sec:authorize="hasRole('ROLE_ADMIN')" class="text-end">
+                                    <form method="get" th:action="@{/usuario_rol/agregar}">
+                                        <input type="hidden" name="nombreRol" th:value="${rol}"/> 
+                                        <input type="hidden" name="username" th:value="${usuario.username}"/>
+                                        <button class="btn btn-sm btn-success" type="submit"
+                                                title="[[#{accion.agregar_rol}]]">
+                                            <i class="fas fa-plus"></i>
+                                        </button>
+                                    </form>                                            
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="alert alert-warning" role="alert" th:if="${usuario == null and #request.getParameter('username') != null}">
+        <i class="fas fa-exclamation-triangle"></i> No se encontró ningún usuario con el nombre de usuario **[[${#request.getParameter('username')}]]**.
+    </div>
+
+</section>
